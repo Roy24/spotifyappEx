@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import TrackList from '../../components/tracklist/tracklist';
-//import PlayList from '../../components/playlist/playlist';
 import SearchBar from '../../components/search/searchbar.js';
 import SpotifySearch from '../../util/spotify/spotifysearch';
 import SpotifySave from '../../util/spotify/spotifysave';
@@ -56,8 +55,12 @@ class App extends Component {
     // Is in PlayList, let's remove it
     if(trackIndexPlayList > -1 ){
       statePlayList.splice(trackIndexPlayList,1);
-      stateTrackList[trackIndexTrackList].addRemove = '+';
-      this.setState({trackList: stateTrackList,playList: statePlayList});
+      this.setState({playList: statePlayList});
+      // Additional check if remove after a new search. TrackList doest not need an update
+      if(trackIndexTrackList > -1 ){
+        stateTrackList[trackIndexTrackList].addRemove = '+';
+        this.setState({trackList: stateTrackList});
+      }
     } else {
       // Is not in PlayList, let's add it
       statePlayList.push(track);

@@ -34,10 +34,9 @@ let accessToken = '';
 //get what iis stored in sessionStorage
 const now = new Date();
 if (params.access_token) {
-  // Get the token informations
-  sessionStorage.accessToken = params.access_token;
+  // Get the token informations (the main idea was to compare state to the stored state but I ran out of time to implement it)
   sessionStorage.stateKey = params.state;
-  //Store now + 1 hour to refresh the token
+  //Store now + 1 hour to refresh the token + timeOut
   let in1Hour = new Date();
   in1Hour.setSeconds(in1Hour.getSeconds() + params.expires_in);
   sessionStorage.expire = in1Hour;
@@ -45,7 +44,6 @@ if (params.access_token) {
   window.setTimeout(() => accessToken = '', params.expires_in * 1000);
   window.history.pushState('Access Token', null, '/');
 }
-const storedToken = sessionStorage.accessToken;
 const storedExpire = Date.parse(sessionStorage.expire);
 
 //Let's connect
