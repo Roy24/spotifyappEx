@@ -1,0 +1,85 @@
+Feature request: keep submitted data on refresh
+March 1st 2018
+
+
+OBJECTIVE
+
+Ensure information given by users are not lost when a token is refreshed. This will cover search terms as well as playlist.
+
+
+BACKGROUND 
+
+Currently, each time the API token needs to be refreshed, the in-progress playlist and the search terms are lost. It happens as well if the user refreshes the page. This kind of behavior always brings frustration and could lead the user to use another app.
+This feature would prevent such frustration by:
+Storing search terms data and restoring them if needed
+Storing tracklist (track searched) and the playlist and restoring them if needed
+Storing playlist name and restoring if needed
+We will use sessionStorage for this purpose.
+
+
+TECHNICAL DESIGN
+
+The storeData method
+
+To avoid rewriting too many times the same line of code, we will create a method to store data in the sessionStorage and update the component states.
+
+This method should be created in the App.js component. It should accept 3 parameters:
+Name (string): the name of the state/item to be stored. 
+Item (string): the state/item value.
+toJSON (boolean): whether the item needs to be switched to a JSON format for the session Storage. Default value should be false so we don’t need to pass it if not needed.
+By default, web storage just saves keys and values as strings. To be able to save our playlist, which is an array containing multiple objects, we need to use JSON.stringify() to save our playlist/tracklist to the sessionStorage.
+
+On the first line of this method, the state needs to be updated by using setState. Since the key is a parameter, we need to use computed property names: this.setState({[name]: item}).
+
+On the second line, an if statement needs to be added to change the item to a JSON format by using JSON.stringify() if toJSON is true. It should be a one line statement.
+
+On the final line, the sessionStorage needs to be created or updated by using sessionStorage.setItem(). Computed property names needs to be used for the key.
+
+
+trackList and playList, storing
+
+In the current app, trackList is the search result. Each time the state is updated in App, we will need to update the sessionStorage with the results. In App.js, tracklist state is updated when:
+searchTrack is triggered
+setPlayList is triggered
+The playList state is updated when:
+setPayList is triggered
+In each of these methods, we will replace the line updating the state. We will call the method we created before and pass the name of the state/item (the same name is used for the state and the sessionStorage key), the item itself, and the last parameter which should be true (toJSON).
+We also need to clear the sessionStorage when a playlist is saved to avoid saving multiple times the same playlist. We will need to update the handleSavePlaylist() method. In the then() function used on the SpotifySave.makePlaylist(), after the setState() update, we will add sessionStorage.clear(). We don’t need to specify any key since our app only uses sessionStorage in this new feature. This also allows to clear the stored search terms, playlist, playlist name and tracklist.
+
+
+playListName, storing
+
+There is already a state for this (playListName) in App.js. We will need to update the web storage when the state is updated. This happens in the handleNameChange() method. We need to remove the setState call for the playListName and instead, call storeData() with only two parameters: the name of the state/item (playListName) and its value.
+
+We should also save the saveClass state at the same time. This state stores the CSS class of the save button so it appears only when there is a playListName and at least one track in the playList. There is already a function checking that, we just need to remove the setState inside the if statement and call storeData() with only two parameters: the name of the state/item (saveClass) and its value.
+
+We also need to update the render here. The input field to name the playlist should have a parameter named value with the playListName state as value ( {this.state.playListName} ). 
+
+
+Search Terms, storing
+
+The search terms are not used in the App component state. We will first need to create one and set its value to an empty string.
+The state should be updated when the search button is clicked. This is handled by the searchTrack() method in App.js. The searchTerms are passed as parameters. If the search terms field is not empty, the searchTerms state should be updated (this.setState) and stored in the sessionStorage (localStorage.setItem()). We call storeData() with only two parameters: the name of the state/item (searchTerms) and its value.
+
+
+trackList, playList, playListName, searchTerm ans saveClass, restoring
+
+To restore all of these values, we will update the default state. For trackList and playList, the default state should be a parsed JSON object from session storage. It should also create an empty array if the web storage is empty.
+
+For the playListName, the stored value is a string. The default value should restore the value stored in the sessionStorage or set the default value as an empty string.
+
+We need to update the searchTerms state we created in the previous steps. The default value should restore the value stored in the sessionStorage or set the default value as an empty string.
+
+The saveClass state is a string. The default value should restore the value stored in the sessionStorage or set it to ‘hidden’.
+
+
+CAVEATS
+
+Session vs local Storage
+The local storage would prevent the stored data to be cleared if the user close his browser. It could be useful if the user close accidentally his browser. It would also require to add a timer to the local storage to avoid providing outdated information about a playlist.
+
+Web storage vs cookies
+Cookies are more widely supported and more known than web storage. Cookies are however limited to 4Ko whereas web storage limitation starts at 5mb, depending of the browser. While the limit should not be an issue, it could be problematic with huge playlists. Web storage is supported by most browsers and cover 95% of users according to  Can I Use ( https://caniuse.com/#feat=namevalue-storage ). This could be re-evaluated if the metrics show a lot users with non compatible browsers. In that case, we could created a failsafe by using cookies if web storage is not available.
+
+Creating a new component
+We could create a new component and export the storeData method. While it’s more in the spirit of ReactJS, the App.js component should be rewritten completely to split it in multiple components. It’s not the purpose of this feature and should be done as part of a global rewriting of the app.
